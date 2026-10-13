@@ -1,0 +1,8 @@
+mlflow==2.19.0
+confluent-kafka
+pandas
+pyarrow
+flask
+requests
+# opcionais: presidio-analyzer presidio-anonymizer detoxify
+# (pyspark já vem na runtime do CAI; não instale outro)
