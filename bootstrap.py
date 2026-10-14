@@ -1,12 +1,18 @@
 """Script de entrada do Job do CAI: instala dependências (só quando o requirements.txt mudou)
-e em seguida executa a avaliação (eval_job.main) no mesmo processo."""
+e em seguida executa a avaliação (eval_job.main) no mesmo processo.
+Compatível com runtimes PBJ (o script roda como célula, sem __file__)."""
 import hashlib
 import os
 import subprocess
 import sys
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.getcwd())
+try:
+    ROOT = os.path.dirname(os.path.abspath(__file__))
+except NameError:                      # runtime PBJ: __file__ não existe; o Job roda na raiz do projeto
+    ROOT = os.getcwd()
+os.chdir(ROOT)
+sys.path.insert(0, ROOT)
+
 digest = hashlib.sha256(open("requirements.txt", "rb").read()).hexdigest()
 marker = os.path.join(os.getenv("STATE_DIR", "state"), ".requirements.sha")
 if not (os.path.isfile(marker) and open(marker).read() == digest):
@@ -19,4 +25,6 @@ else:
 
 import eval_job  # noqa: E402  (importado só depois do pip install)
 
-sys.exit(eval_job.main())
+rc = eval_job.main()
+if rc:                                 # só sai com erro quando necessário (gate com FAIL_ON_GATE=1)
+    raise SystemExit(rc)
