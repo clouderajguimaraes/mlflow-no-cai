@@ -56,3 +56,19 @@ Os traces simulados carregam `app.demo.fault` (verdade de referência). O Job ca
 - Os nomes dos atributos de retrieval (`gen_ai.retrieval.documents`) são uma suposição; confirme no tópico real.
 - Os detectores locais são linhas de base: léxico de toxicidade, regex/checksum de PII e regras de aconselhamento. Para produção, use Presidio/Detoxify e juízes LLM, validados com casos rotulados.
 - MLflow 2.19 não ingere OTLP nem mostra a Trace UI para spans vindos do Kafka. Isso fica para versões 3.x.
+
+## Automação via API do CAI (criar e disparar o Job)
+Tudo é feito por scripts em `cai_api/` (só precisam de `requests`; rodam no seu Mac ou numa sessão do CAI). O **único passo manual** é criar a API key: User Settings > API Keys, escopo *API*.
+
+```bash
+pip install requests
+cp cai_api/api.env.sh.example cai_api/api.env.sh      # preencha CAI_DOMAIN e CAI_API_KEY (dentro do CAI isso é automático)
+python cai_api/discover.py --runtimes                  # (opcional) lista as runtimes
+python cai_api/setup_job.py                            # cria/atualiza o Job (bootstrap.py, cron */15, Python 3.10 Workbench)
+python cai_api/discover.py                             # mostra project_id, job_id e últimas execuções
+python cai_api/run_job.py --wait                       # dispara e aguarda (código de saída 0 = sucesso)
+```
+- `bootstrap.py` é o script do Job: instala o `requirements.txt` só quando ele muda e executa `eval_job.py` no mesmo processo.
+- `setup_job.py` é idempotente (cria ou atualiza pelo nome). Opções: `--manual`, `--cron`, `--cpu`, `--memory`, `--timeout`, `--editor JupyterLab`, `--runtime-id`, `--env CHAVE=VALOR`, `--dry-run`.
+- Os IDs descobertos ficam em `cai_api/.cai_ids.json` (não versionado).
+- `python cai_api/selftest_api.py` testa os scripts contra um servidor simulado. Os nomes de campos da API v2 devem ser conferidos na referência do seu workbench na primeira execução real (`--dry-run` mostra o payload).

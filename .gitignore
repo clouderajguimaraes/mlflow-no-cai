@@ -5,4 +5,7 @@ state/
 mlruns/
 __pycache__/
 *.pyc
+.DS_Store
 .ipynb_checkpoints/
+cai_api/api.env.sh
+cai_api/.cai_ids.json
