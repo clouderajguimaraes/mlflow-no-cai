@@ -62,11 +62,26 @@ Tudo é feito por scripts em `cai_api/` (só precisam de `requests`; rodam no se
 
 ```bash
 pip install requests
-cp cai_api/api.env.sh.example cai_api/api.env.sh      # preencha CAI_DOMAIN e CAI_API_KEY (dentro do CAI isso é automático)
-python cai_api/discover.py --runtimes                  # (opcional) lista as runtimes
-python cai_api/setup_job.py                            # cria/atualiza o Job (bootstrap.py, cron */15, Python 3.10 Workbench)
-python cai_api/discover.py                             # mostra project_id, job_id e últimas execuções
-python cai_api/run_job.py --wait                       # dispara e aguarda (código de saída 0 = sucesso)
+
+cp cai_api/api.env.sh.example cai_api/api.env.sh     # preencha CAI_DOMAIN e CAI_API_KEY
+
+python cai_api/setup_job.py --dry-run                # confira o payload
+python cai_api/setup_job.py --manual --dry-run       # confira o payload
+python cai_api/setup_job.py --manual                 # Cria job sem agendamento
+
+#python cai_api/setup_job.py                         # cria o Job com agendamento
+
+# Cria um job com um editor especifico
+python cai_api/setup_job.py --manual --runtime-id docker.repository.cloudera.com/cloudera/cdsw/ml-runtime-pbj-jupyterlab-python3.10-standard:2026.08.1-b5
+
+# Validando a criacao do job
+python cai_api/discover.py                           # mostra o project_id e o job_id
+
+# Publicar mais mensagens no Kafka
+python producer_app.py --n 100 --profile healthy --seed 1
+
+# Executa
+python cai_api/run_job.py --wait                     # dispara e aguarda
 ```
 - `bootstrap.py` é o script do Job: instala o `requirements.txt` só quando ele muda e executa `eval_job.py` no mesmo processo.
 - `setup_job.py` é idempotente (cria ou atualiza pelo nome). Opções: `--manual`, `--cron`, `--cpu`, `--memory`, `--timeout`, `--editor JupyterLab`, `--runtime-id`, `--env CHAVE=VALOR`, `--dry-run`.
